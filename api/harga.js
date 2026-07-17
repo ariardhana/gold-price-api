@@ -1,57 +1,43 @@
 export default async function handler(req, res) {
+
   try {
-    const headers = {
-      "User-Agent": "Mozilla/5.0"
-    };
 
-    // Harga jual
-    const home = await fetch("https://www.logammulia.com/id", {
-      headers
-    }).then(r => r.text());
-
-    // Buyback
-    const sell = await fetch("https://www.logammulia.com/id/sell/gold", {
-      headers
-    }).then(r => r.text());
-
-    // Ambil harga jual
-    const hargaMatch = home.match(/Harga\/gram\s*Rp\s*([\d.,]+)/i);
-
-    // Ambil buyback
-    const buybackMatch = sell.match(/Harga Buyback:\s*.*?Rp\s*([\d.,]+)/is);
-
-    if (!hargaMatch)
-      throw new Error("Harga jual tidak ditemukan");
-
-    if (!buybackMatch)
-      throw new Error("Harga buyback tidak ditemukan");
-
-    const harga = Number(
-      hargaMatch[1]
-        .replace(/\./g, "")
-        .replace(",", ".")
-        .split(".")[0]
+    const response = await fetch(
+      "https://www.antamgold.com/fetch-price.php"
     );
 
-    const buyback = Number(
-      buybackMatch[1]
-        .replace(/\./g, "")
-        .replace(",", ".")
-        .split(".")[0]
-    );
+    const json = await response.json();
+
+    const data = json.data["Tahun 2026"];
 
     res.status(200).json({
       status: "ok",
-      tanggal: new Date().toISOString(),
-      harga,
-      buyback,
-      source: "Logam Mulia"
+      update: new Date().toISOString(),
+
+      gram1: {
+        harga: Number(data["1.0"].harga.replace(/[^\d]/g, "")),
+        buyback: Number(data["1.0"].harga_buyback.replace(/[^\d]/g, ""))
+      },
+
+      gram5: {
+        harga: Number(data["5.0"].harga.replace(/[^\d]/g, "")),
+        buyback: Number(data["5.0"].harga_buyback.replace(/[^\d]/g, ""))
+      },
+
+      gram10: {
+        harga: Number(data["10.0"].harga.replace(/[^\d]/g, "")),
+        buyback: Number(data["10.0"].harga_buyback.replace(/[^\d]/g, ""))
+      }
+
     });
 
-  } catch (e) {
+  } catch(e){
+
     res.status(500).json({
-      status: "error",
-      message: e.message
+      status:"error",
+      message:e.toString()
     });
+
   }
+
 }
